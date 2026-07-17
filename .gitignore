@@ -1,0 +1,14 @@
+# Respostas exportadas pelo simulador (dados pessoais)
+respostas-rsc.json
+
+# Ambientes e cache Python
+__pycache__/
+.venv/
+
+# Temporários e sistema
+*.tmp
+*.bak
+*.log
+*~
+.DS_Store
+Thumbs.db

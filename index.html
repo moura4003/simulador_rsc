@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador RSC-PCCTAE · Decreto 13.048/2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1c2b33;
+  --ink-soft:#4a5a63;
+  --paper:#f7f6f2;
+  --card:#ffffff;
+  --line:#dcd9d0;
+  --verde:#166b45;
+  --verde-bg:#e9f4ee;
+  --rubro:#9c3a2c;
+  --rubro-bg:#f9edea;
+  --selo:#1f4e79;
+  --amarelo-bg:#fdf6e3;
+  --amarelo-line:#e0c878;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'IBM Plex Sans',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.5;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+/* ---------- cabeçalho ---------- */
+header{
+  border-bottom:3px double var(--ink);
+  background:var(--card);
+}
+.head-inner{padding:28px 0 22px}
+.brasao{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-soft);margin-bottom:10px;
+}
+h1{
+  font-family:'Archivo',sans-serif;
+  font-weight:800;font-size:clamp(26px,4vw,40px);
+  line-height:1.05;letter-spacing:-.01em;
+}
+h1 .fino{font-weight:500;color:var(--ink-soft)}
+.sub{margin-top:8px;color:var(--ink-soft);font-size:14px;max-width:70ch}
+
+/* ---------- painel fixo ---------- */
+.painel{
+  position:sticky;top:0;z-index:50;
+  background:var(--ink);color:#f2f1ec;
+  box-shadow:0 2px 10px rgba(0,0,0,.18);
+}
+.painel-inner{
+  display:flex;align-items:stretch;gap:0;
+  overflow-x:auto;
+}
+.p-bloco{
+  padding:12px 22px;border-right:1px solid rgba(255,255,255,.14);
+  min-width:120px;
+}
+.p-bloco:last-child{border-right:none}
+.p-rotulo{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.65}
+.p-valor{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:600;line-height:1.2}
+.p-valor small{font-size:12px;font-weight:400;opacity:.7}
+.p-nivel{
+  display:flex;align-items:center;gap:8px;flex:1;
+  padding:12px 22px;min-width:220px;
+}
+.p-nivel .p-valor{font-size:18px}
+.pill{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  padding:2px 9px;border-radius:3px;border:1px solid rgba(255,255,255,.35);
+  white-space:nowrap;
+}
+.pill.ok{background:var(--verde);border-color:var(--verde)}
+.p-classe select{
+  font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;
+  background:transparent;color:#f2f1ec;border:1px solid rgba(255,255,255,.35);
+  border-radius:4px;padding:4px 8px;cursor:pointer;
+}
+.p-classe select:focus{outline:2px solid #fff;outline-offset:1px}
+.p-classe select option{color:var(--ink)}
+.nivel.na{opacity:.45;background:repeating-linear-gradient(-45deg,#f2f1ec,#f2f1ec 8px,#faf9f6 8px,#faf9f6 16px)}
+.nivel.na .carimbo{opacity:0!important}
+.nivel.sumiu{display:none}
+.nivel{animation:sobe .28s ease}
+@keyframes sobe{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.nivel{animation:none}}
+.tag-seu{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;
+  background:var(--selo);color:#fff;border-radius:3px;
+  padding:2px 7px;margin-left:8px;vertical-align:middle;
+}
+.nivel.seu{border-color:var(--selo);border-width:2px}
+.aviso-doutor,.aviso-incompat{
+  background:var(--amarelo-bg);border:1px solid var(--amarelo-line);
+  border-radius:6px;padding:14px 16px;font-size:13px;margin-bottom:10px;display:none;
+}
+.aviso-doutor.mostra,.aviso-incompat.mostra{display:block}
+.n-na{font-size:12.5px;margin-top:8px;color:var(--ink-soft);font-style:italic}
+
+/* ---------- corpo ---------- */
+main{display:grid;grid-template-columns:1fr 340px;gap:28px;padding:28px 0 80px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+
+/* filtro */
+.filtro{
+  display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center;
+}
+.filtro input[type=search]{
+  flex:1;min-width:220px;
+  padding:10px 14px;border:1px solid var(--line);border-radius:4px;
+  font:inherit;background:var(--card);
+}
+.filtro input[type=search]:focus{outline:2px solid var(--selo);outline-offset:1px}
+.btn{
+  font:inherit;font-weight:600;font-size:13px;
+  padding:9px 14px;border:1px solid var(--ink);border-radius:4px;
+  background:var(--card);color:var(--ink);cursor:pointer;
+}
+.btn:hover{background:var(--ink);color:#fff}
+.btn.sec{border-color:var(--line);color:var(--ink-soft)}
+.btn.sec:hover{background:var(--ink-soft);border-color:var(--ink-soft);color:#fff}
+
+/* anexos */
+details.anexo{
+  background:var(--card);border:1px solid var(--line);border-radius:6px;
+  margin-bottom:14px;overflow:hidden;
+}
+details.anexo summary{
+  list-style:none;cursor:pointer;user-select:none;
+  padding:16px 18px;display:flex;align-items:baseline;gap:12px;
+  border-left:4px solid var(--selo);
+}
+details.anexo summary::-webkit-details-marker{display:none}
+.a-num{
+  font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;
+  color:var(--selo);min-width:44px;
+}
+.a-titulo{font-weight:600;font-size:14px;flex:1;line-height:1.35}
+.a-parcial{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);
+  white-space:nowrap;
+}
+.a-parcial.tem{color:var(--verde);font-weight:600}
+.seta{color:var(--ink-soft);transition:transform .15s}
+details[open] .seta{transform:rotate(90deg)}
+
+.item{
+  display:grid;grid-template-columns:52px 1fr 140px 200px 78px;
+  gap:12px;align-items:center;
+  padding:12px 18px;border-top:1px solid var(--line);
+}
+.item:nth-child(even){background:#fbfaf7}
+.i-id{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft)}
+.i-desc{font-size:13.5px;line-height:1.4}
+.i-un{font-size:11.5px;color:var(--ink-soft);font-style:italic}
+.i-pts{font-size:12.5px;text-align:right;color:var(--ink-soft);line-height:1.3}
+.i-pts b{color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:14px}
+.i-campo{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.item input[type=number]{
+  width:56px;padding:8px 4px;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:15px;
+  border:1px solid var(--line);border-radius:4px;background:#fff;
+}
+.i-suf{font-size:12px;color:var(--ink-soft);white-space:nowrap;margin-right:4px}
+.i-conta{
+  flex-basis:100%;font-size:11px;color:var(--ink-soft);
+  font-family:'IBM Plex Mono',monospace;
+}
+.i-conta.tem{color:var(--verde);font-weight:600}
+.item input[type=number]:focus{outline:2px solid var(--selo);outline-offset:1px}
+.item input.preenchido{border-color:var(--verde);background:var(--verde-bg);font-weight:600}
+.item input.preenchido + .i-suf{color:var(--verde);font-weight:600}
+.i-sub{font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;color:var(--ink-soft)}
+.i-sub.tem{color:var(--verde);font-weight:600}
+@media(max-width:720px){
+  .item{grid-template-columns:1fr auto;grid-template-areas:"desc desc" "meta qty";row-gap:8px}
+  .i-id{display:none}
+  .i-desc{grid-area:desc}
+  .i-pts{grid-area:meta;text-align:left}
+  .i-campo{grid-area:qty}
+  .i-sub{display:none}
+}
+
+.aviso-v{
+  margin:0 18px 14px;padding:10px 14px;
+  background:var(--amarelo-bg);border:1px solid var(--amarelo-line);border-radius:4px;
+  font-size:12.5px;display:none;
+}
+.aviso-v.mostra{display:block}
+
+/* ---------- coluna dos níveis ---------- */
+aside h2{
+  font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;
+}
+.nivel{
+  position:relative;background:var(--card);
+  border:1px solid var(--line);border-radius:6px;
+  padding:14px 16px;margin-bottom:10px;
+}
+.nivel.ok{border-color:var(--verde);background:var(--verde-bg)}
+.n-topo{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.n-nome{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px}
+.n-iq{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft)}
+.n-req{font-size:12px;color:var(--ink-soft);margin-top:2px}
+.n-falta{font-size:12.5px;margin-top:8px;color:var(--rubro)}
+.n-falta ul{margin-left:16px}
+.n-escol{font-size:11px;color:var(--ink-soft);margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}
+
+/* carimbo — assinatura visual */
+.carimbo{
+  position:absolute;top:10px;right:12px;
+  font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--verde);border:2.5px solid var(--verde);border-radius:4px;
+  padding:3px 8px;transform:rotate(-6deg);
+  opacity:0;transition:opacity .2s, transform .2s;
+  pointer-events:none;
+  mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='40'><filter id='r'><feTurbulence baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/></filter><rect width='100' height='40' fill='white' filter='url(%23r)'/></svg>");
+  -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='40'><filter id='r'><feTurbulence baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/></filter><rect width='100' height='40' fill='white' filter='url(%23r)'/></svg>");
+}
+.nivel.ok .carimbo{opacity:1;transform:rotate(-8deg) scale(1)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.rodape-aviso{
+  margin-top:18px;padding:14px 16px;
+  background:var(--card);border-left:4px solid var(--rubro);
+  border-radius:4px;font-size:12.5px;color:var(--ink-soft);
+}
+.rodape-aviso b{color:var(--ink)}
+
+footer{
+  border-top:1px solid var(--line);padding:20px 0 40px;
+  font-size:12px;color:var(--ink-soft);
+}
+footer a{color:var(--selo)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-inner">
+    <div class="brasao">Decreto nº 13.048, de 3 de julho de 2026 · Lei nº 11.091/2005</div>
+    <h1>Simulador RSC<span class="fino">-PCCTAE</span></h1>
+    <p class="sub">Informe a quantidade que você possui de cada item dos Anexos I a VI. A pontuação, os critérios distintos e o alcance de cada nível são calculados na hora.</p>
+  </div>
+</header>
+
+<div class="painel">
+  <div class="wrap painel-inner">
+    <div class="p-bloco p-classe">
+      <div class="p-rotulo">Classe do cargo</div>
+      <select id="classe" aria-label="Nível de classificação do cargo">
+        <option value="">—</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+        <option value="E">E</option>
+      </select>
+    </div>
+    <div class="p-bloco p-classe">
+      <div class="p-rotulo">Sua escolaridade</div>
+      <select id="escol" aria-label="Escolaridade atual do servidor" style="font-size:14px">
+        <option value="">—</option>
+        <option value="0">Fundamental incompleto</option>
+        <option value="1">Fundamental completo</option>
+        <option value="2">Médio ou técnico</option>
+        <option value="3">Graduação</option>
+        <option value="4">Especialização (lato sensu)</option>
+        <option value="5">Mestrado</option>
+        <option value="6">Doutorado</option>
+      </select>
+    </div>
+    <div class="p-bloco">
+      <div class="p-rotulo">Pontuação</div>
+      <div class="p-valor" id="pTotal">0</div>
+    </div>
+    <div class="p-bloco">
+      <div class="p-rotulo">Critérios distintos</div>
+      <div class="p-valor" id="pCrit">0</div>
+    </div>
+    <div class="p-bloco">
+      <div class="p-rotulo">Requisitos com item</div>
+      <div class="p-valor" id="pReq"><small>nenhum</small></div>
+    </div>
+    <div class="p-nivel">
+      <div>
+        <div class="p-rotulo">Maior nível alcançado</div>
+        <div class="p-valor" id="pNivel">—</div>
+      </div>
+      <span class="pill" id="pProx"></span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<main>
+  <section>
+    <div class="filtro">
+      <input type="search" id="busca" placeholder="Filtrar itens… (ex.: comissão, contrato, patente)" aria-label="Filtrar itens">
+      <button class="btn sec" id="btnExpandir">Abrir todos</button>
+      <button class="btn sec" id="btnLimpar">Zerar</button>
+      <button class="btn" id="btnExportar">Salvar respostas</button>
+      <button class="btn" id="btnImportar">Carregar</button>
+      <input type="file" id="arquivo" accept=".json" hidden>
+    </div>
+    <div id="anexos"></div>
+  </section>
+
+  <aside>
+    <h2>Alcance por nível</h2>
+    <div class="aviso-incompat" id="avisoIncompat"></div>
+    <div class="aviso-doutor" id="avisoDoutor"><b>Doutorado:</b> você já percebe o Incentivo à Qualificação máximo (75%). O RSC-PCCTAE não altera seu incentivo — os níveis foram ocultados.</div>
+    <div id="niveis"></div>
+    <div class="rodape-aviso">
+      <b>Estimativa.</b> A pontuação é sujeita à avaliação fundamentada da CRSC-PCCTAE (Art. 5º, §4º e Art. 15). Cada atividade pontua uma única vez (§3º); não pontuam atividades que representem exclusivamente o desempenho ordinário do cargo. A concessão depende ainda da escolaridade exigida por nível (§1º), do interstício de 3 anos, da conclusão do estágio probatório e do limite de 75% de servidores da instituição.<br><br>Uso facultativo e sem vínculo institucional: o resultado não vincula, condiciona nem antecipa qualquer decisão da administração ou da CRSC-PCCTAE.
+    </div>
+  </aside>
+</main>
+</div>
+
+<footer>
+  <div class="wrap">Ferramenta pessoal, sem vínculo institucional, compartilhada a título meramente informativo. O uso é facultativo e de responsabilidade exclusiva de cada usuário. Os resultados são estimativas e não vinculam, condicionam nem antecipam qualquer decisão da administração ou da CRSC-PCCTAE. · Fernando Moura — <a href="mailto:moura4003@gmail.com">moura4003@gmail.com</a> · Texto integral do decreto: <a href="https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13048.htm" target="_blank" rel="noopener">planalto.gov.br</a></div>
+</footer>
+
+<script>
+const ITENS=[
+["I-1",1,"Mandato como membro de conselhos superiores, de unidades e órgãos colegiados da IFE","por ano ou fração acima de seis meses",3],
+["I-2",1,"Coordenação ou presidência de núcleos, representações, GTs, comissões ou comitês instituídos ou reconhecidos","por designação",4.5],
+["I-3",1,"Membro de núcleos, representações, GTs, comissões ou comitês regularmente instituídos","por designação",3],
+["I-4",1,"Defensor dativo ou membro de equipe em sindicância, PAD ou tomada de contas especial","por designação",3],
+["I-5",1,"Organização, fiscalização ou execução de exame de seleção, vestibular ou concursos","por designação",4.5],
+["I-6",1,"Elaboração, revisão ou correção de provas de seleção, vestibular ou concursos","por designação",3],
+["I-7",1,"Mandato em entidade sindical da categoria","por ano ou fração acima de seis meses",1.5],
+["I-8",1,"Membro em programas ou projetos de políticas públicas externas à IFE com resultados relevantes comprovados","por designação",3],
+["I-9",1,"Representação legal da IFE junto ao Poder Público ou responsabilidade técnica junto a órgãos de fiscalização, controle e regulação","por designação",7.5],
+["I-10",1,"Atuação técnica externa autorizada pela IFE em órgãos estatais, paraestatais, escolas de governo, agências reguladoras ou organismos internacionais","por produto",4.5],
+["II-1",2,"Coordenação de projetos institucionais (ensino, pesquisa, extensão, gestão e inovação)","por projeto",7.5],
+["II-2",2,"Atividades técnicas ou especializadas em projetos, incluída elaboração de projetos pedagógicos, programas e ações institucionais","por projeto",4.5],
+["II-3",2,"Comissão ou conselho editorial de livros, revistas ou publicações científicas ou acadêmicas","por mandato",7.5],
+["II-4",2,"Cooperação Técnica Interinstitucional em projetos institucionais","por projeto",3],
+["II-5",2,"Atividades de orientação, tutoria, preceptoria ou supervisão","por designação",3],
+["II-6",2,"Produção ou reformulação de material acessível ou técnico de referência (manuais, roteiros)","por produto",3],
+["II-7",2,"Avaliação de trabalho ou jurado em eventos acadêmicos, científicos, culturais, esportivos e técnicos","por evento",3],
+["II-8",2,"Atividade institucional de produção audiovisual, artística, exposição, podcast ou outras apresentações","por projeto",3],
+["II-9",2,"Formação continuada ou desenvolvimento de competências (mín. 10h), não usada para aceleração da promoção","por capacitação",1],
+["II-10",2,"Atividade técnica especializada reconhecida pela IFE com domínio diferenciado e contribuição relevante","por ano ou fração acima de seis meses",1],
+["II-11",2,"Capacitação, fórum, oficina, workshop e congresso (mín. 10h) de interesse da IFE","por evento",1],
+["III-1",3,"Premiação internacional por projeto implementado na administração pública","por prêmio",20],
+["III-2",3,"Premiação nacional por projeto implementado na administração pública","por prêmio",15],
+["III-3",3,"Premiação local ou institucional formalmente instituída por projeto na administração pública","por prêmio",7.5],
+["IV-1",4,"Atuação qualificada em operação, implantação, suporte ou desenvolvimento de sistemas estruturantes da administração pública","por sistema",4.5],
+["IV-2",4,"Elaboração de projeto básico ou termo de referência, ou equipe de planejamento de contratação","por designação",3],
+["IV-3",4,"Gestão ou fiscalização de contratos, convênios, acordos ou instrumentos correlatos","por designação",4.5],
+["IV-4",4,"Atividades relacionadas à licitação e suas excepcionalidades","por ano ou fração acima de seis meses",3],
+["IV-5",4,"Apoio técnico especializado em saúde, acessibilidade ou diversidade, de interesse institucional","por ano ou fração acima de seis meses",3],
+["IV-6",4,"Atuação em ambientes ou processos com condições especiais de segurança ou conformidade, sem adicional pelas mesmas condições","por ano ou fração acima de seis meses",3],
+["IV-7",4,"Atuação em sistemas ou processos institucionais fora da atividade habitual do cargo","por designação",3],
+["IV-8",4,"Responsável por setor ou unidade, formalmente designado, sem remuneração pela designação","por ano ou fração acima de seis meses",4.5],
+["V-1-T",5,"Cargo de direção CD-02 ou equivalente — titular","por ano ou fração acima de seis meses",9,"V-1"],
+["V-1-S",5,"Cargo de direção CD-02 ou equivalente — substituto","por ano ou fração acima de seis meses",4.5,"V-1"],
+["V-2-T",5,"Cargo de direção CD-03/CD-04 ou equivalente — titular","por ano ou fração acima de seis meses",7.5,"V-2"],
+["V-2-S",5,"Cargo de direção CD-03/CD-04 ou equivalente — substituto","por ano ou fração acima de seis meses",3,"V-2"],
+["V-3-T",5,"Função gratificada FG-01/FG-02 ou equivalente — titular","por ano ou fração acima de seis meses",4.5,"V-3"],
+["V-3-S",5,"Função gratificada FG-01/FG-02 ou equivalente — substituto","por ano ou fração acima de seis meses",1.5,"V-3"],
+["V-4-T",5,"Função gratificada a partir da FG-03 ou equivalente — titular","por ano ou fração acima de seis meses",3,"V-4"],
+["V-4-S",5,"Função gratificada a partir da FG-03 ou equivalente — substituto","por ano ou fração acima de seis meses",1,"V-4"],
+["VI-1",6,"Carta patente relacionada aos interesses institucionais","por patente",30],
+["VI-2",6,"Participação relevante em protótipos, depósitos ou registros de propriedade intelectual ou privilégio de invenção","por projeto",25],
+["VI-3",6,"Transferência de tecnologia, licenciamento ou exploração de ativo tecnológico, como autor ou inventor","por produto",20],
+["VI-4",6,"Conclusão de curso formal superior ao exigido para o cargo, não usado para Incentivo à Qualificação","por curso",15],
+["VI-5",6,"Participação relevante em implantação ou desenvolvimento de produto, projeto, processo, técnica ou tecnologia institucional","por produto",15],
+["VI-6",6,"Liderança ou vice-liderança de grupo de pesquisa ou extensão registrado em órgão oficial","por grupo de pesquisa",7.5],
+["VI-7",6,"Membro de grupo de pesquisa registrado em órgão ou sistema oficial","por projeto",3],
+["VI-8",6,"Aprovação de projeto de captação de recursos para a IFE","por projeto",7.5],
+["VI-9",6,"Publicação ou organização de livro com ISBN e Conselho Editorial","por produto",20],
+["VI-10",6,"Autoria ou coautoria de capítulo de livro ou artigo em revista especializada, jornal científico ou periódico","por publicação",7.5],
+["VI-11",6,"Apresentação de trabalho de interesse institucional em congresso, seminário ou outros eventos","por produto",4.5],
+["VI-12",6,"Produção de material técnico, científico, metodológico ou administrativo estruturado para difusão do conhecimento","por produto",4.5],
+["VI-13",6,"Avaliação de projeto de ensino, pesquisa, extensão ou inovação","por projeto",4.5],
+["VI-14",6,"Difusão ou apoio à formação institucional (expositor, facilitador, colaborador)","por evento",3],
+["VI-15",6,"Instrutor, tutor, palestrante, autor de conteúdo ou orientador em ação formativa de plano de desenvolvimento de pessoas","por curso",4.5],
+["VI-16",6,"Coordenação de congresso, simpósio ou seminário de interesse institucional","por evento",3.5],
+["VI-17",6,"Coorientação de trabalho de conclusão de curso","por evento",4.5],
+["VI-18",6,"Autoria de obra artística ou cultural registrada com repercussão institucional comprovada","por produto",3],
+["VI-19",6,"Atuação institucional no enfrentamento de surto, epidemia e pandemia","por mês",1]
+];
+
+const ANEXOS={
+1:"Participação em grupos de trabalho, comissões, comitês, núcleos e representações",
+2:"Participação e atuação em projetos institucionais, gestão, ensino, pesquisa, extensão, inovação e assistência",
+3:"Premiação em evento de reconhecimento público por projetos na administração pública",
+4:"Designação para assunção de responsabilidades técnico-administrativas ou especializadas",
+5:"Exercício de função ou cargo de direção ou de assessoramento institucional",
+6:"Produção, prospecção e difusão de conhecimento científico ou técnico"
+};
+const ROMANO={1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI"};
+
+/* Tradução das unidades do decreto para linguagem de formulário */
+const UNID={
+"por ano ou fração acima de seis meses":{s:"ano",p:"anos",tempo:true,nota:"Informe o tempo total de exercício. A fração acima de seis meses conta como um ano; até seis meses não conta."},
+"por designação":{s:"designação",p:"designações",nota:"Uma designação = uma portaria, ato ou ofício de designação."},
+"por produto":{s:"produto",p:"produtos"},
+"por projeto":{s:"projeto",p:"projetos"},
+"por evento":{s:"evento",p:"eventos"},
+"por capacitação":{s:"capacitação",p:"capacitações"},
+"por mandato":{s:"mandato",p:"mandatos"},
+"por prêmio":{s:"prêmio",p:"prêmios"},
+"por sistema":{s:"sistema",p:"sistemas"},
+"por patente":{s:"patente",p:"patentes"},
+"por curso":{s:"curso",p:"cursos"},
+"por grupo de pesquisa":{s:"grupo de pesquisa",p:"grupos"},
+"por publicação":{s:"publicação",p:"publicações"},
+"por mês":{s:"mês",p:"meses",nota:"Informe o número de meses de atuação."}
+};
+
+const NIVEIS=[
+{n:"RSC-I",  pts:10,crit:1,req:[],       escol:"Sem exigência de escolaridade adicional",iq:"IQ 10%"},
+{n:"RSC-II", pts:15,crit:2,req:[],       escol:"Ensino fundamental completo",iq:"IQ 15%"},
+{n:"RSC-III",pts:25,crit:2,req:[],       escol:"Ensino médio ou técnico de nível médio",iq:"IQ 25%"},
+{n:"RSC-IV", pts:30,crit:3,req:[2,4,5,6],escol:"Graduação",iq:"IQ 30%"},
+{n:"RSC-V",  pts:52,crit:5,req:[4,5,6],  escol:"Pós-graduação lato sensu",iq:"IQ 52%"},
+{n:"RSC-VI", pts:75,crit:7,req:[6],      escol:"Mestrado",iq:"IQ 75%"}
+];
+
+/* Piso por classe do cargo (Lei 11.091, Anexo II — escolaridade de ingresso):
+   A/B fundamental incompleto → todos; C fundamental → a partir do RSC-II;
+   D médio → a partir do RSC-III; E superior → a partir do RSC-IV */
+const PISO_CLASSE={A:0,B:0,C:1,D:2,E:3};
+let classe='';
+/* Escolaridade do servidor (§1º do Art. 5º): índice = nível de RSC destinado.
+   0 fund. incompleto→RSC-I … 5 mestrado→RSC-VI; 6 doutorado = IQ máximo, sem RSC. */
+let escol='';
+
+const qtd={};
+ITENS.forEach(i=>qtd[i[0]]=0);
+
+const fmt=v=>v.toLocaleString('pt-BR',{maximumFractionDigits:2});
+
+/* ---------- montar anexos ---------- */
+const contAnexos=document.getElementById('anexos');
+for(let r=1;r<=6;r++){
+  const det=document.createElement('details');
+  det.className='anexo';det.dataset.req=r;
+  if(r===1)det.open=true;
+  det.innerHTML=`<summary>
+    <span class="a-num">${ROMANO[r]}</span>
+    <span class="a-titulo">${ANEXOS[r]}</span>
+    <span class="a-parcial" id="parcial-${r}">0 pt</span>
+    <span class="seta">›</span>
+  </summary>
+  ${r===5?'<div class="aviso-v" id="avisoV">⚠ Titular e substituto do mesmo cargo preenchidos: o mesmo período não pode pontuar duas vezes (Art. 5º, §3º). Informe períodos distintos para cada condição.</div>':''}`;
+  ITENS.filter(i=>i[1]===r).forEach(i=>{
+    const [id,,desc,un,pts]=i;
+    const u=UNID[un]||{s:"unidade",p:"unidades"};
+    const row=document.createElement('div');
+    row.className='item';row.dataset.busca=(id+' '+desc).toLowerCase();
+    const campo=u.tempo
+      ? `<input type="number" min="0" step="1" inputmode="numeric" value="" placeholder="0" aria-label="Anos de exercício: ${desc}" data-id="${id}" data-parte="anos"><span class="i-suf">anos</span>
+         <input type="number" min="0" step="1" inputmode="numeric" value="" placeholder="0" aria-label="Meses adicionais: ${desc}" data-id="${id}" data-parte="meses"><span class="i-suf">meses</span>
+         <span class="i-conta" id="conta-${id}">não pontua</span>`
+      : `<input type="number" min="0" step="1" inputmode="numeric" value="" placeholder="0" aria-label="Quantos ${u.p}: ${desc}" data-id="${id}"><span class="i-suf">${u.p}</span>`;
+    row.innerHTML=`
+      <span class="i-id">${id}</span>
+      <span class="i-desc">${desc}${u.nota?`<br><span class="i-un">${u.nota}</span>`:''}</span>
+      <span class="i-pts"><b>${fmt(pts)}</b> pontos<br>por ${u.s}</span>
+      <span class="i-campo">${campo}</span>
+      <span class="i-sub" id="sub-${id}">0 pt</span>`;
+    det.appendChild(row);
+  });
+  contAnexos.appendChild(det);
+}
+
+/* ---------- montar níveis ---------- */
+const contNiveis=document.getElementById('niveis');
+NIVEIS.forEach((nv,ix)=>{
+  const el=document.createElement('div');
+  el.className='nivel';el.id='nv-'+ix;
+  el.innerHTML=`
+    <div class="carimbo">Atingido</div>
+    <div class="n-topo"><span class="n-nome">${nv.n}</span><span class="n-iq">${nv.iq}</span></div>
+    <div class="n-req">${nv.pts} pts · ${nv.crit} critério${nv.crit>1?'s':''}${nv.req.length?` · ≥1 do req. ${nv.req.map(x=>ROMANO[x]).join(', ')}`:''}</div>
+    <div class="n-falta" id="falta-${ix}"></div>
+    <div class="n-escol">Escolaridade p/ receber: ${nv.escol}</div>`;
+  contNiveis.appendChild(el);
+});
+
+/* ---------- cálculo ---------- */
+function calcular(){
+  let total=0,crit=0;const reqSet=new Set();const porReq={1:0,2:0,3:0,4:0,5:0,6:0};
+  ITENS.forEach(([id,req,,,pts])=>{
+    const q=qtd[id]||0;const sub=q*pts;
+    total+=sub;porReq[req]+=sub;
+    if(q>0){crit++;reqSet.add(req);}
+    const s=document.getElementById('sub-'+id);
+    s.textContent=fmt(sub)+' pt';s.classList.toggle('tem',sub>0);
+  });
+  for(let r=1;r<=6;r++){
+    const p=document.getElementById('parcial-'+r);
+    p.textContent=fmt(porReq[r])+' pt';
+    p.classList.toggle('tem',porReq[r]>0);
+  }
+  document.getElementById('pTotal').textContent=fmt(total);
+  document.getElementById('pCrit').textContent=crit;
+  document.getElementById('pReq').innerHTML=reqSet.size?[...reqSet].sort().map(x=>ROMANO[x]).join(' · '):'<small>nenhum</small>';
+
+  // aviso Anexo V
+  const conflito=["V-1","V-2","V-3","V-4"].some(g=>
+    (qtd[g+"-T"]>0)&&(qtd[g+"-S"]>0));
+  document.getElementById('avisoV').classList.toggle('mostra',conflito);
+
+  let maior='—',proximo=null;
+  const pisoClasse=classe?PISO_CLASSE[classe]:0;
+  const temEscol=escol!=='';
+  const eIdx=temEscol?parseInt(escol):-1;
+  const doutor=eIdx===6;
+  const piso=Math.max(pisoClasse,doutor?0:(temEscol?eIdx:0));
+
+  // incompatibilidade classe × escolaridade
+  const inc=document.getElementById('avisoIncompat');
+  if(classe&&temEscol&&!doutor&&eIdx<pisoClasse){
+    inc.innerHTML=`<b>Verifique os dados:</b> a classe ${classe} exige, no ingresso, escolaridade acima de "${document.getElementById('escol').selectedOptions[0].text}". Confira a seleção.`;
+    inc.classList.add('mostra');
+  }else inc.classList.remove('mostra');
+
+  document.getElementById('avisoDoutor').classList.toggle('mostra',doutor);
+
+  NIVEIS.forEach((nv,ix)=>{
+    const card=document.getElementById('nv-'+ix);
+    const falta=document.getElementById('falta-'+ix);
+
+    // doutorado: some tudo; escolaridade definida: somem os níveis abaixo do dela
+    const some=doutor||(temEscol&&ix<eIdx)||(classe&&!temEscol&&false);
+    card.classList.toggle('sumiu',some);
+    card.classList.toggle('seu',temEscol&&!doutor&&ix===eIdx);
+    const tagVelha=card.querySelector('.tag-seu');
+    if(tagVelha)tagVelha.remove();
+    if(temEscol&&!doutor&&ix===eIdx){
+      card.querySelector('.n-nome').insertAdjacentHTML('afterend','<span class="tag-seu">Seu nível</span>');
+    }
+    if(some){card.classList.remove('ok','na');falta.innerHTML='';return;}
+
+    // classe sem escolaridade: níveis abaixo do piso ficam hachurados (não somem)
+    const na=!temEscol&&classe&&ix<pisoClasse;
+    card.classList.toggle('na',na);
+    if(na){
+      card.classList.remove('ok');
+      falta.innerHTML=`<span class="n-na">Não aplicável à classe ${classe}: o ingresso no cargo já exige escolaridade superior à deste nível (Art. 5º, §1º).</span>`;
+      return;
+    }
+    const okPts=total>=nv.pts, okCrit=crit>=nv.crit;
+    const okReq=!nv.req.length||nv.req.some(r=>reqSet.has(r));
+    const ok=okPts&&okCrit&&okReq;
+    card.classList.toggle('ok',ok);
+    if(ok){falta.innerHTML='';maior=nv.n;}
+    else{
+      const l=[];
+      if(!okPts)l.push(`faltam <b>${fmt(nv.pts-total)}</b> pontos`);
+      if(!okCrit)l.push(`faltam <b>${nv.crit-crit}</b> critério(s) distinto(s)`);
+      if(!okReq)l.push(`nenhum item dos requisitos ${nv.req.map(x=>ROMANO[x]).join(', ')}`);
+      falta.innerHTML='Falta: '+l.join(' · ');
+      if(!proximo)proximo=nv;
+    }
+  });
+  document.getElementById('pNivel').textContent=doutor?'—':maior;
+  const pill=document.getElementById('pProx');
+  if(doutor){pill.textContent='IQ máximo (75%)';pill.classList.add('ok');}
+  else if(maior==='RSC-VI'){pill.textContent='nível máximo';pill.classList.add('ok');}
+  else if(proximo){pill.textContent='próximo: '+proximo.n;pill.classList.remove('ok');}
+  else{pill.textContent='';pill.classList.remove('ok');}
+}
+
+document.getElementById('escol').addEventListener('change',e=>{
+  escol=e.target.value;
+  calcular();
+});
+
+/* ---------- eventos ---------- */
+/* Converte anos + meses em anos contáveis (Art. 5º / Anexos):
+   ano cheio + fração ACIMA de seis meses conta como mais um ano.
+   Ex.: 2 anos e 7 meses = 3 · 2 anos e 6 meses = 2 */
+const num=v=>{const n=parseFloat(String(v).replace(',','.'));return(isNaN(n)||n<0)?0:n;};
+const EH_TEMPO={};
+ITENS.forEach(([id,,,un])=>{if((UNID[un]||{}).tempo)EH_TEMPO[id]=true;});
+
+function lerTempo(id){
+  const a=document.querySelector(`input[data-id="${id}"][data-parte="anos"]`);
+  const m=document.querySelector(`input[data-id="${id}"][data-parte="meses"]`);
+  const totalMeses=Math.round(num(a.value)*12+num(m.value));
+  const anosContados=Math.floor(totalMeses/12)+((totalMeses%12)>6?1:0);
+  qtd[id]=anosContados;
+  const c=document.getElementById('conta-'+id);
+  c.textContent=anosContados>0
+    ? `conta como ${anosContados} ano${anosContados>1?'s':''}`
+    : (totalMeses>0?'não pontua: seis meses ou menos':'não pontua');
+  c.classList.toggle('tem',anosContados>0);
+  [a,m].forEach(inp=>inp.classList.toggle('preenchido',num(inp.value)>0));
+}
+
+document.addEventListener('input',e=>{
+  if(e.target.matches('.item input[type=number]')){
+    const id=e.target.dataset.id;
+    if(EH_TEMPO[id])lerTempo(id);
+    else{
+      qtd[id]=num(e.target.value);
+      e.target.classList.toggle('preenchido',qtd[id]>0);
+    }
+    calcular();
+  }
+  if(e.target.id==='busca'){
+    const t=e.target.value.trim().toLowerCase();
+    document.querySelectorAll('.item').forEach(r=>{
+      r.style.display=(!t||r.dataset.busca.includes(t))?'':'none';
+    });
+    if(t)document.querySelectorAll('details.anexo').forEach(d=>d.open=true);
+  }
+});
+
+document.getElementById('classe').addEventListener('change',e=>{
+  classe=e.target.value;
+  calcular();
+});
+
+document.getElementById('btnExpandir').addEventListener('click',function(){
+  const abrir=this.textContent==='Abrir todos';
+  document.querySelectorAll('details.anexo').forEach(d=>d.open=abrir);
+  this.textContent=abrir?'Fechar todos':'Abrir todos';
+});
+
+document.getElementById('btnLimpar').addEventListener('click',()=>{
+  if(!confirm('Zerar todas as quantidades?'))return;
+  ITENS.forEach(i=>qtd[i[0]]=0);
+  document.querySelectorAll('.item input').forEach(inp=>{inp.value='';inp.classList.remove('preenchido');});
+  document.querySelectorAll('.i-conta').forEach(c=>{c.textContent='não pontua';c.classList.remove('tem');});
+  calcular();
+});
+
+document.getElementById('btnExportar').addEventListener('click',()=>{
+  const preenchidos={},tempo={};
+  Object.entries(qtd).forEach(([k,v])=>{if(v>0)preenchidos[k]=v;});
+  Object.keys(EH_TEMPO).forEach(id=>{
+    const a=num(document.querySelector(`input[data-id="${id}"][data-parte="anos"]`).value);
+    const m=num(document.querySelector(`input[data-id="${id}"][data-parte="meses"]`).value);
+    if(a>0||m>0)tempo[id]={anos:a,meses:m};
+  });
+  const blob=new Blob([JSON.stringify({decreto:"13.048/2026",classe:classe||null,escolaridade:escol!==''?parseInt(escol):null,respostas:preenchidos,tempo},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='respostas-rsc.json';a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('btnImportar').addEventListener('click',()=>document.getElementById('arquivo').click());
+document.getElementById('arquivo').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      const resp=d.respostas||d;
+      if(d.classe&&PISO_CLASSE[d.classe]!==undefined){
+        classe=d.classe;
+        document.getElementById('classe').value=classe;
+      }
+      if(d.escolaridade!==null&&d.escolaridade!==undefined&&d.escolaridade>=0&&d.escolaridade<=6){
+        escol=String(d.escolaridade);
+        document.getElementById('escol').value=escol;
+      }
+      ITENS.forEach(i=>qtd[i[0]]=0);
+      Object.entries(resp).forEach(([k,v])=>{if(k in qtd&&typeof v==='number'&&v>0)qtd[k]=v;});
+      document.querySelectorAll('.item input').forEach(inp=>{
+        if(EH_TEMPO[inp.dataset.id]){inp.value='';return;}
+        const v=qtd[inp.dataset.id];
+        inp.value=v>0?v:'';
+        inp.classList.toggle('preenchido',v>0);
+      });
+      // tempo: repõe anos/meses brutos e recalcula pela regra
+      const tp=d.tempo||{};
+      Object.keys(EH_TEMPO).forEach(id=>{
+        const a=document.querySelector(`input[data-id="${id}"][data-parte="anos"]`);
+        const m=document.querySelector(`input[data-id="${id}"][data-parte="meses"]`);
+        if(tp[id]){a.value=tp[id].anos||'';m.value=tp[id].meses||'';}
+        else if(qtd[id]>0){a.value=qtd[id];m.value='';}
+        else{a.value='';m.value='';}
+        lerTempo(id);
+      });
+      calcular();
+    }catch(err){alert('Arquivo inválido: '+err.message);}
+  };
+  rd.readAsText(f);
+  e.target.value='';
+});
+
+calcular();
+</script>
+</body>
+</html>
