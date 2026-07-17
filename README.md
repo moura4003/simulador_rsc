@@ -24,3 +24,8 @@ decisão da administração ou da CRSC-PCCTAE.
 - Autor: Fernando Moura — moura4003@gmail.com
 - Texto integral do decreto:
   https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13048.htm
+
+## Licença
+
+Este projeto está sob a **licença MIT**. O uso, a cópia e a adaptação são livres,
+desde que mantido o aviso de copyright. Veja o arquivo [LICENSE](LICENSE).
